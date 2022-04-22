@@ -1,3 +1,6 @@
+/*
+Package nanodb is a tiny embeddable key value store.
+*/
 package nanodb
 
 import (
@@ -18,6 +21,7 @@ type DB struct {
 	file *os.File
 }
 
+// Create a new database connection
 func Open(path string) (*DB, error) {
 	db := &DB{opened: true}
 	db.path = path
@@ -26,10 +30,10 @@ func Open(path string) (*DB, error) {
 		return nil, err
 	}
 	db.file = f
-
 	return db, nil
 }
 
+// Insert the given Key-Value pair into to the DB
 func (db *DB) Put(key, value string) error {
 	db.Lock()
 	defer db.Unlock()
@@ -52,6 +56,7 @@ func (db *DB) Put(key, value string) error {
 	return nil
 }
 
+// Get the value for the particular key given
 func (db *DB) Get(key string) string {
 	db.file.Seek(0, 0)
 	var value string
@@ -68,6 +73,7 @@ func (db *DB) Get(key string) string {
 	}
 	return value
 }
+
 func (db *DB) delete(key string) error {
 	db.file.Seek(0, 0)
 
@@ -99,6 +105,7 @@ func (db *DB) delete(key string) error {
 	return nil
 }
 
+// Delete the particular Key-Value pair
 func (db *DB) Delete(key string) error {
 	db.Lock()
 	defer db.Unlock()
@@ -126,6 +133,18 @@ func (db *DB) Delete(key string) error {
 	}
 
 	err := os.WriteFile(db.path, buf.Bytes(), 0666)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Append data to the value of the given key
+func (db *DB) Append(key, value string) error {
+
+	old := db.Get(key)
+	newVal := old + value
+	err := db.Put(key, newVal)
 	if err != nil {
 		return err
 	}
